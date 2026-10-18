@@ -1,0 +1,18 @@
+.idea
+.vscode
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Ortam
+.env
+secrets/
+*.pem

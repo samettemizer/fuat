@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <RootNamespace>FuatAmca.Api</RootNamespace>
+    <UserSecretsId>fuat-api-secrets</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- EF Core + PostgreSQL -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.*" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.*" />
+
+    <!-- Identity + JWT -->
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.*" />
+
+    <!-- OpenAPI dokumani + Scalar arayuzu -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.*" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.*" />
+
+    <!-- Dogrulama -->
+    <PackageReference Include="FluentValidation" Version="12.*" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.*" />
+
+    <!-- Ops: log ve health check -->
+    <PackageReference Include="Serilog.AspNetCore" Version="9.*" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.*" />
+    <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.*" />
+
+    <!-- Disa aktarim: excel ve pdf -->
+    <PackageReference Include="ClosedXML" Version="0.104.*" />
+    <PackageReference Include="QuestPDF" Version="2025.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FuatAmca.Api.UnitTests" />
+    <InternalsVisibleTo Include="FuatAmca.Api.IntegrationTests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,101 @@
+# FuatAmca
+
+name: fuat
+
+services:
+  fuat-db:
+    image: postgres:15
+    container_name: fuat-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fuat}
+      POSTGRES_USER: ${POSTGRES_USER:-fuat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fuat_gizli_parola}
+      TZ: Europe/Istanbul
+    volumes:
+      - fuat-db-verisi:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fuat} -d ${POSTGRES_DB:-fuat}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # EF migration'lari uygular ve rolleri/ilk yoneticiyi olusturur.
+  fuat-migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: fuat-api:latest
+    container_name: fuat-migrate
+    restart: "no"
+    command: ["--migrate", "--seed"]
+    depends_on:
+      fuat-db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${FUAT_ENVIRONMENT:-Development}
+      ConnectionStrings__FuatAmcaDatabase: "Host=fuat-db;Port=5432;Database=${POSTGRES_DB:-fuat};Username=${POSTGRES_USER:-fuat};Password=${POSTGRES_PASSWORD:-fuat_gizli_parola}"
+      Jwt__KeyFilePath: /var/fuat/keys/fuat-signing-key.pem
+      Seed__AdminEmail: ${FUAT_ADMIN_EMAIL:-yonetici@fuat.local}
+      Seed__AdminPassword: ${FUAT_ADMIN_PASSWORD:-FuatAmca.Parola.2026}
+      Seed__AdminFullName: ${FUAT_ADMIN_FULL_NAME:-Apartman Yoneticisi}
+      TZ: Europe/Istanbul
+    volumes:
+      - fuat-anahtarlar:/var/fuat/keys
+
+  # Backend
+  fuat-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: fuat-api:latest
+    container_name: fuat-api
+    restart: unless-stopped
+    depends_on:
+      fuat-db:
+        condition: service_healthy
+      fuat-migrate:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${FUAT_ENVIRONMENT:-Development}
+      ConnectionStrings__FuatAmcaDatabase: "Host=fuat-db;Port=5432;Database=${POSTGRES_DB:-fuat};Username=${POSTGRES_USER:-fuat};Password=${POSTGRES_PASSWORD:-fuat_gizli_parola}"
+      Jwt__Issuer: ${FUAT_JWT_ISSUER:-fuat-api}
+      Jwt__Audience: ${FUAT_JWT_AUDIENCE:-fuat-panel}
+      Jwt__AccessTokenLifetimeMinutes: ${FUAT_JWT_ACCESS_TOKEN_LIFETIME_MINUTES:-15}
+      Jwt__RefreshTokenLifetimeDays: ${FUAT_JWT_REFRESH_TOKEN_LIFETIME_DAYS:-14}
+      # Uretimde RS256 ozel anahtari dogrudan verilmelidir (Jwt__PrivateKeyPem).
+      Jwt__KeyFilePath: /var/fuat/keys/fuat-signing-key.pem
+      Cors__AllowedOrigins__0: ${FUAT_PANEL_URL:-http://localhost:5173}
+      TZ: Europe/Istanbul
+    ports:
+      - "${FUAT_API_PORT:-8080}:8080"
+    volumes:
+      - fuat-anahtarlar:/var/fuat/keys
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # Frontend
+  # fuat-panel:
+  #  build:
+  #    context: ./frontend
+  #    dockerfile: Dockerfile
+  #  image: fuat-panel:latest
+  #  container_name: fuat-panel
+  #  restart: unless-stopped
+  #  depends_on:
+  #    fuat-api:
+  #      condition: service_healthy
+  #  ports:
+  #    - "${FUAT_PANEL_PORT:-5173}:80"
+  #  environment:
+  #    TZ: Europe/Istanbul
+
+volumes:
+  fuat-db-verisi:
+  fuat-anahtarlar:
